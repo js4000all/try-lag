@@ -8,11 +8,17 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📚 RAG Demo")
-
 # セッション状態の初期化
 if 'model' not in st.session_state:
     st.session_state.model = None
+
+# 利用可能なモデル
+AVAILABLE_MODELS = {
+    "gemini-2.0-flash-lite": "軽量版（高速）",
+    "gemini-2.0-flash": "標準版"
+}
+
+st.title("📚 RAG Demo")
 
 # サイドバー
 with st.sidebar:
@@ -20,14 +26,20 @@ with st.sidebar:
     api_key = st.text_input("Gemini API Key", type="password")
     st.write("https://aistudio.google.com/app/apikey")
     
-    if st.button("API Keyを初期化"):
+    selected_model = st.selectbox(
+        "モデルを選択",
+        options=list(AVAILABLE_MODELS.keys()),
+        format_func=lambda x: f"{x} ({AVAILABLE_MODELS[x]})"
+    )
+    
+    if st.button("モデルを準備"):
         if api_key:
             try:
                 genai.configure(api_key=api_key)
-                st.session_state.model = genai.GenerativeModel('gemini-2.0-flash-lite')
-                st.success("API Keyが初期化されました")
+                st.session_state.model = genai.GenerativeModel(selected_model)
+                st.success("モデルの準備が完了しました")
             except Exception as e:
-                st.error(f"初期化に失敗しました: {str(e)}")
+                st.error(f"モデルの準備に失敗しました: {str(e)}")
         else:
             st.warning("API Keyを入力してください")
     
