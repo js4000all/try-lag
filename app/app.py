@@ -1,5 +1,5 @@
 import streamlit as st
-import requests
+import google.generativeai as genai
 import json
 
 st.set_page_config(
@@ -13,7 +13,7 @@ st.title("📚 RAG Demo")
 # サイドバー
 with st.sidebar:
     st.header("設定")
-    llm_url = st.text_input("LLMサーバーURL", "http://localhost:8000")
+    api_key = st.text_input("Gemini API Key", type="password")
     max_length = st.slider("最大長", 50, 500, 100)
     temperature = st.slider("温度", 0.0, 1.0, 0.7)
 
@@ -25,26 +25,36 @@ with tab1:
     question = st.text_area("質問を入力してください", height=100)
     
     if st.button("回答を生成"):
-        if question:
+        if question and api_key:
             try:
-                response = requests.post(
-                    f"{llm_url}/generate",
-                    json={
-                        "prompt": question,
-                        "max_length": max_length,
-                        "temperature": temperature
-                    }
+                # Geminiの設定
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-pro')
+                
+                # プロンプトの生成
+                prompt = f"""
+                以下の質問に回答してください。
+                質問: {question}
+                """
+                
+                # テキスト生成
+                response = model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=max_length,
+                        temperature=temperature
+                    )
                 )
-                if response.status_code == 200:
-                    result = response.json()
-                    st.write("回答:")
-                    st.write(result["generated_text"])
-                else:
-                    st.error(f"エラーが発生しました: {response.text}")
+                
+                st.write("回答:")
+                st.write(response.text)
             except Exception as e:
                 st.error(f"エラーが発生しました: {str(e)}")
         else:
-            st.warning("質問を入力してください")
+            if not api_key:
+                st.warning("API Keyを入力してください")
+            if not question:
+                st.warning("質問を入力してください")
 
 with tab2:
     st.header("データ投入")

@@ -6,27 +6,16 @@ RAG (Retrieval-Augmented Generation) のデモアプリケーション
 
 ```
 .
-├── llm/                # LLMサーバー（Colab上で実行）
-│   ├── main.py        # FastAPIサーバー
-│   └── requirements.txt
-├── app/               # ローカルUI
+├── app/               # UIアプリケーション
 │   ├── app.py         # Streamlitアプリケーション
 │   └── requirements.txt
-├── Dockerfile         # ローカルUIサーバイメージ作成用
-└── compose.yaml       # ローカルUIサーバ起動用
+├── Dockerfile         # UIアプリケーション用
+└── compose.yaml       # Docker Compose設定
 ```
 
 ## 使い方
 
-### 1. LLMサーバーの起動（Colab上）
-
-```bash
-cd llm
-pip install -r requirements.txt
-python main.py
-```
-
-### 2. ローカルUIの起動（ローカル）
+### UIアプリケーションの起動（ローカル）
 
 ```bash
 docker-compose up --build
@@ -37,8 +26,9 @@ docker-compose up --build
 ## 機能
 
 - テキスト生成
+  - Gemini APIを使用
+  - API Keyの設定
   - プロンプト入力
   - 最大長と温度の調整
-  - LLMサーバーURLの設定
 - データ投入
-  - テキストファイルのアップロード
+  - TODO
