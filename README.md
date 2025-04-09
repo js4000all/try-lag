@@ -21,7 +21,9 @@ RAG (Retrieval-Augmented Generation) のデモアプリケーション
 docker-compose up --build
 ```
 
-ブラウザで `http://localhost:8501` にアクセス
+ブラウザで `http://localhost:8501` にアクセス。
+`Gemini API Key`を入力し、初期化する。
+質問欄に入力する。
 
 ## 機能
 
