@@ -1,22 +1,19 @@
-FROM python:alpine
+FROM python:3.12-slim
 
 RUN set -x \
-    && apk update \
-    && apk upgrade \
-    && apk add --no-cache --virtual .build-deps \
-        g++ \
-        cmake \
-        build-base \
-        apache-arrow-dev \
-        python3-dev \
-        linux-headers \
-        rust \
-        cargo
-RUN pip install --no-cache-dir streamlit
-RUN pip install --no-cache-dir google-generativeai
-RUN pip install --no-cache-dir python-dotenv
-RUN pip install --no-cache-dir langchain==0.0.350 chromadb==0.4.18 sentence-transformers==2.2.2
-RUN apk del .build-deps
+    && apt-get update \
+    && apt-get install -y \
+        build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --upgrade pip \
+    && pip install --no-cache-dir \
+        chromadb \
+        langchain \
+        sentence-transformers \
+        google-generativeai \
+        python-dotenv \
+        streamlit \
+        streamlit-javascript
 
 WORKDIR /app
 
