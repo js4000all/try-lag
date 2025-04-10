@@ -1,6 +1,8 @@
+import os
 import streamlit as st
 import google.generativeai as genai
-import json
+
+DEFAULT_API_KEY = os.getenv("GEMINI_API_KEY")
 
 st.set_page_config(
     page_title="RAG Demo",
@@ -11,6 +13,9 @@ st.set_page_config(
 # セッション状態の初期化
 if 'model' not in st.session_state:
     st.session_state.model = None
+
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = DEFAULT_API_KEY
 
 # 利用可能なモデル
 AVAILABLE_MODELS = {
@@ -23,7 +28,7 @@ st.title("📚 RAG Demo")
 # サイドバー
 with st.sidebar:
     st.header("設定")
-    api_key = st.text_input("Gemini API Key", type="password")
+    api_key = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key)
     st.write("https://aistudio.google.com/app/apikey")
     
     selected_model = st.selectbox(
