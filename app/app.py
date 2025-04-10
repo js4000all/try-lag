@@ -1,6 +1,11 @@
 import os
+import tempfile
+
 import streamlit as st
 import google.generativeai as genai
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Chroma
+from langchain.embeddings import HuggingFaceEmbeddings
 
 DEFAULT_API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -16,6 +21,9 @@ if 'model' not in st.session_state:
 
 if 'api_key' not in st.session_state:
     st.session_state.api_key = DEFAULT_API_KEY
+
+if 'embedding' not in st.session_state:
+    st.session_state.embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # 利用可能なモデル
 AVAILABLE_MODELS = {
@@ -61,13 +69,21 @@ with tab1:
     if st.button("回答を生成"):
         if question and st.session_state.model:
             try:
-                # プロンプトの生成
+                context_text = ""
+                if 'vector_db' in st.session_state:
+                    docs = st.session_state.vector_db.similarity_search(question, k=3)
+                    context_text = "\n\n".join([doc.page_content for doc in docs])
+                else:
+                    st.warning("検索対象データがありません。データ投入を先に行ってください。")
+
                 prompt = f"""
-                以下の質問に回答してください。
-                質問: {question}
-                """
-                
-                # テキスト生成
+以下の文書に基づいて、質問に答えてください。
+--- 文書情報 ---
+{context_text}
+--- 質問 ---
+{question}
+"""
+
                 response = st.session_state.model.generate_content(
                     prompt,
                     generation_config=genai.types.GenerationConfig(
@@ -75,7 +91,7 @@ with tab1:
                         temperature=temperature
                     )
                 )
-                
+
                 st.write("回答:")
                 st.write(response.text)
             except Exception as e:
@@ -89,7 +105,26 @@ with tab1:
 with tab2:
     st.header("データ投入")
     uploaded_file = st.file_uploader("テキストファイルをアップロード", type=["txt"])
+    
     if uploaded_file is not None:
         text = uploaded_file.read().decode("utf-8")
-        st.text_area("アップロードされたテキスト", text, height=200) 
-        
+        st.text_area("アップロードされたテキスト", text, height=200)
+
+        # チャンク分割
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50
+        )
+        chunks = splitter.split_text(text)
+        st.write(f"チャンク数: {len(chunks)}")
+
+        # 一時ディレクトリ（ChromaDBの永続化場所）
+        with tempfile.TemporaryDirectory() as persist_dir:
+            db = Chroma.from_texts(
+                texts=chunks,
+                embedding=st.session_state.embedding,
+                persist_directory=persist_dir
+            )
+            st.success("データベースに文書を登録しました！")
+            # 保存されたDBをセッションに保持
+            st.session_state.vector_db = db

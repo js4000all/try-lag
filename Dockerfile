@@ -9,6 +9,7 @@ RUN set -x \
     && pip install --no-cache-dir \
         chromadb \
         langchain \
+        langchain-community \
         sentence-transformers \
         google-generativeai \
         python-dotenv \
