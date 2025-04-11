@@ -7,6 +7,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 
+from validation import validate
+
+
 DEFAULT_API_KEY = os.getenv("GEMINI_API_KEY")
 
 st.set_page_config(
@@ -60,7 +63,7 @@ with st.sidebar:
     temperature = st.slider("温度", 0.0, 1.0, 0.7)
 
 # メインコンテンツ
-tab1, tab2 = st.tabs(["質問", "データ投入"])
+tab1, tab2, tab3 = st.tabs(["質問", "データ投入", "test"])
 
 with tab1:
     st.header("質問")
@@ -68,7 +71,21 @@ with tab1:
     
     if st.button("回答を生成"):
         if question and st.session_state.model:
+            def _call_model(prompt: str) -> str:
+                return st.session_state.model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=max_length,
+                        temperature=temperature
+                    )
+                ).text
             try:
+                # プロンプトの検証
+                is_valid, error_message = validate(question, _call_model)
+                if not is_valid:
+                    st.error(f"プロンプトが不適切です: {error_message}")
+                    st.stop()
+                
                 context_text = ""
                 if 'vector_db' in st.session_state:
                     docs = st.session_state.vector_db.similarity_search(question, k=3)
@@ -84,13 +101,13 @@ with tab1:
 {question}
 """
 
-                response = st.session_state.model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=max_length,
-                        temperature=temperature
-                    )
-                )
+                response = _call_model(prompt)
+
+                # 回答の検証
+                is_valid, error_message = validate(response.text, _call_model)
+                if not is_valid:
+                    st.error(f"回答に不適切な内容が含まれています: {error_message}")
+                    st.stop()
 
                 st.write("回答:")
                 st.write(response.text)
@@ -108,6 +125,21 @@ with tab2:
     
     if uploaded_file is not None:
         text = uploaded_file.read().decode("utf-8")
+        
+        # コンテンツの検証
+        def _call_model(prompt: str) -> str:
+            return st.session_state.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=max_length,
+                    temperature=temperature
+                )
+            ).text
+        is_valid, error_message = validate(text, _call_model)
+        if not is_valid:
+            st.error(f"アップロードされたファイルに不適切な内容が含まれています: {error_message}")
+            st.stop()
+            
         st.text_area("アップロードされたテキスト", text, height=200)
 
         # チャンク分割
@@ -128,3 +160,19 @@ with tab2:
             st.success("データベースに文書を登録しました！")
             # 保存されたDBをセッションに保持
             st.session_state.vector_db = db
+
+with tab3:
+    st.header("test")
+    target = st.text_area("target", height=100)
+    if st.button("validate"):
+        def _call_model(prompt: str) -> str:
+            return st.session_state.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=max_length,
+                    temperature=temperature
+                )
+            ).text
+        is_valid, error_message = validate(target, _call_model)
+        st.write(is_valid)
+        st.write(error_message)
