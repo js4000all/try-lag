@@ -97,9 +97,9 @@ with tab1:
     if st.button("回答を生成"):
         if question and st.session_state.model:
             try:
-                _call_model = _get_call_model_function()
+                call_model = _get_call_model_function()
                 # プロンプトの検証
-                is_valid, error_message = validate(question, _call_model)
+                is_valid, error_message = validate(question, call_model)
                 if not is_valid:
                     st.error(f"プロンプトが不適切です: {error_message}")
                     st.stop()
@@ -119,10 +119,10 @@ with tab1:
 {question}
 """
 
-                response = _call_model(prompt)
+                response = call_model(prompt)
 
                 # 回答の検証
-                is_valid, error_message = validate(response, _call_model)
+                is_valid, error_message = validate(response, call_model)
                 if not is_valid:
                     st.error(f"回答に不適切な内容が含まれています: {error_message}")
                     st.stop()
