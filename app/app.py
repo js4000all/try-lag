@@ -140,15 +140,9 @@ with tab2:
     
     if uploaded_file is not None:
         text = uploaded_file.read().decode("utf-8")
-        
-        # コンテンツの検証
-        is_valid, error_message = validate(text, _get_call_model_function())
-        if not is_valid:
-            st.error(f"アップロードされたファイルに不適切な内容が含まれています: {error_message}")
-            st.stop()
-            
-        st.text_area("アップロードされたテキスト", text, height=200)
+        st.text_area("アップロードされたテキスト", text, height=200, disabled=True)
 
+        call_model = _get_call_model_function()
         # チャンク分割
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=500,
@@ -156,6 +150,12 @@ with tab2:
         )
         chunks = splitter.split_text(text)
         st.write(f"チャンク数: {len(chunks)}")
+        for i, chunk in enumerate(chunks):
+            st.text_area(f"チャンク {i}", chunk, height=100, disabled=True)
+            is_valid, error_message = validate(chunk, call_model)
+            if not is_valid:
+                st.error(f"チャンクに不適切な内容が含まれています: {error_message}")
+                st.stop()
 
         # 一時ディレクトリ（ChromaDBの永続化場所）
         with tempfile.TemporaryDirectory() as persist_dir:
