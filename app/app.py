@@ -1,5 +1,4 @@
 import os
-import tempfile
 import typing as ty
 import uuid
 
@@ -14,8 +13,11 @@ from validation import validate
 
 
 DEFAULT_API_KEY = os.getenv("GEMINI_API_KEY")
+CHROMA_PERSIST_DIR = "/tmp/chroma_db"
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
+
+chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
 
 st.set_page_config(
     page_title="RAG Demo",
@@ -160,16 +162,18 @@ with tab2:
                 st.error(f"チャンクに不適切な内容が含まれています: {error_message}")
                 st.stop()
 
-        # 一時ディレクトリ（ChromaDBの永続化場所）
-        with tempfile.TemporaryDirectory() as persist_dir:
-            db = Chroma.from_texts(
-                texts=chunks,
-                embedding=st.session_state.embedding,
-                persist_directory=persist_dir
-            )
-            st.success("データベースに文書を登録しました！")
-            # 保存されたDBをセッションに保持
-            st.session_state.vector_db = db
+        db = Chroma(
+            client=chroma_client,
+            collection_name=st.session_state.session_id,
+            embedding_function=st.session_state.embedding
+        )
+        db.add_texts(
+            texts=chunks,
+            metadatas=[{"source": uploaded_file.name} for _ in range(len(chunks))],
+        )
+        st.success("データベースに文書を登録しました！")
+        # 保存されたDBをセッションに保持
+        st.session_state.vector_db = db
 
 with tab3:
     st.header("test")
