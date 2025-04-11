@@ -120,13 +120,13 @@ with tab1:
                 response = _call_model(prompt)
 
                 # 回答の検証
-                is_valid, error_message = validate(response.text, _call_model)
+                is_valid, error_message = validate(response, _call_model)
                 if not is_valid:
                     st.error(f"回答に不適切な内容が含まれています: {error_message}")
                     st.stop()
 
                 st.write("回答:")
-                st.write(response.text)
+                st.write(response)
             except Exception as e:
                 st.error(f"エラーが発生しました: {str(e)}")
         else:
