@@ -68,7 +68,7 @@ with st.sidebar:
     else:
         st.write("モデルを選択してください")
 
-    max_length = st.slider("最大長", 50, 500, 100)
+    max_length = st.slider("最大長", 64, 512, 256)
     temperature = st.slider("温度", 0.0, 1.0, 0.7)
 
 def _get_call_model_function() -> ty.Optional[ty.Callable[[str], str]]:
