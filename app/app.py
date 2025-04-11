@@ -1,6 +1,7 @@
 import os
 import tempfile
 import typing as ty
+import uuid
 
 import streamlit as st
 import google.generativeai as genai
@@ -22,12 +23,12 @@ st.set_page_config(
 # セッション状態の初期化
 if 'model' not in st.session_state:
     st.session_state.model = None
-
 if 'api_key' not in st.session_state:
     st.session_state.api_key = DEFAULT_API_KEY
-
 if 'embedding' not in st.session_state:
     st.session_state.embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 
 # 利用可能なモデル
 AVAILABLE_MODELS = [
@@ -40,6 +41,8 @@ st.title("📚 RAG Demo")
 # サイドバー
 with st.sidebar:
     st.header("設定")
+    st.write(f"セッションID: {st.session_state.session_id}")
+
     api_key = st.text_input("Gemini API Key", type="password", value=st.session_state.api_key)
     st.write("https://aistudio.google.com/app/apikey")
     
