@@ -62,6 +62,15 @@ with st.sidebar:
     max_length = st.slider("最大長", 50, 500, 100)
     temperature = st.slider("温度", 0.0, 1.0, 0.7)
 
+def _call_model(prompt: str) -> str:
+    return st.session_state.model.generate_content(
+        prompt,
+        generation_config=genai.types.GenerationConfig(
+            max_output_tokens=max_length,
+            temperature=temperature
+        )
+    ).text
+
 # メインコンテンツ
 tab1, tab2, tab3 = st.tabs(["質問", "データ投入", "test"])
 
@@ -71,14 +80,6 @@ with tab1:
     
     if st.button("回答を生成"):
         if question and st.session_state.model:
-            def _call_model(prompt: str) -> str:
-                return st.session_state.model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=max_length,
-                        temperature=temperature
-                    )
-                ).text
             try:
                 # プロンプトの検証
                 is_valid, error_message = validate(question, _call_model)
@@ -127,14 +128,6 @@ with tab2:
         text = uploaded_file.read().decode("utf-8")
         
         # コンテンツの検証
-        def _call_model(prompt: str) -> str:
-            return st.session_state.model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=max_length,
-                    temperature=temperature
-                )
-            ).text
         is_valid, error_message = validate(text, _call_model)
         if not is_valid:
             st.error(f"アップロードされたファイルに不適切な内容が含まれています: {error_message}")
@@ -165,14 +158,6 @@ with tab3:
     st.header("test")
     target = st.text_area("target", height=100)
     if st.button("validate"):
-        def _call_model(prompt: str) -> str:
-            return st.session_state.model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=max_length,
-                    temperature=temperature
-                )
-            ).text
         is_valid, error_message = validate(target, _call_model)
         st.write(is_valid)
         st.write(error_message)
