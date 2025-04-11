@@ -60,6 +60,11 @@ with st.sidebar:
         else:
             st.warning("API Keyを入力してください")
     
+    if st.session_state.model is not None:
+        st.write(f"モデル: {st.session_state.model.model_name}")
+    else:
+        st.write("モデルを選択してください")
+
     max_length = st.slider("最大長", 50, 500, 100)
     temperature = st.slider("温度", 0.0, 1.0, 0.7)
 
@@ -122,7 +127,7 @@ with tab1:
                 st.error(f"エラーが発生しました: {str(e)}")
         else:
             if not st.session_state.model:
-                st.warning("API Keyを初期化してください")
+                st.warning("モデルを初期化してください")
             if not question:
                 st.warning("質問を入力してください")
 
