@@ -29,10 +29,10 @@ if 'embedding' not in st.session_state:
     st.session_state.embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # 利用可能なモデル
-AVAILABLE_MODELS = {
-    "gemini-2.0-flash-lite": "軽量版（高速）",
-    "gemini-2.0-flash": "標準版"
-}
+AVAILABLE_MODELS = [
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash"
+]
 
 st.title("📚 RAG Demo")
 
@@ -44,8 +44,8 @@ with st.sidebar:
     
     selected_model = st.selectbox(
         "モデルを選択",
-        options=list(AVAILABLE_MODELS.keys()),
-        format_func=lambda x: f"{x} ({AVAILABLE_MODELS[x]})"
+        options=list(AVAILABLE_MODELS),
+        format_func=lambda x: x
     )
     
     if st.button("モデルを準備"):
