@@ -14,6 +14,8 @@ from validation import validate
 
 
 DEFAULT_API_KEY = os.getenv("GEMINI_API_KEY")
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 50
 
 st.set_page_config(
     page_title="RAG Demo",
@@ -146,8 +148,8 @@ with tab2:
         call_model = _get_call_model_function()
         # チャンク分割
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP
         )
         chunks = splitter.split_text(text)
         st.write(f"チャンク数: {len(chunks)}")
