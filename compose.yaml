@@ -1,0 +1,11 @@
+services:
+  ui:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/app
+      - ./.hf_cache:/tmp/.cache/huggingface
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - HF_HOME=/tmp/.cache/huggingface
