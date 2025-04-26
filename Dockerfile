@@ -4,6 +4,7 @@ RUN set -x \
     && apt-get update \
     && apt-get install -y \
         build-essential \
+        python3-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --upgrade pip \
     && pip install --no-cache-dir \
@@ -14,7 +15,8 @@ RUN set -x \
         google-generativeai \
         python-dotenv \
         streamlit \
-        streamlit-javascript
+        streamlit-javascript \
+        sentencepiece
 
 WORKDIR /app
 

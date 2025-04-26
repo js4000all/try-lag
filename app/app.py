@@ -31,7 +31,7 @@ if 'model' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state.api_key = DEFAULT_API_KEY
 if 'embedding' not in st.session_state:
-    st.session_state.embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    st.session_state.embedding = HuggingFaceEmbeddings(model_name="cl-nagoya/ruri-v3-130m")
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
