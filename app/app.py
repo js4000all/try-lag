@@ -1,4 +1,5 @@
 import os
+import time
 import typing as ty
 import uuid
 
@@ -193,12 +194,26 @@ with tab2:
         chunks = splitter.split_text(text)
         st.write(f"チャンク数: {len(chunks)}")
 
+        # プログレスバーの設定
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        status_text.text("チャンクの検証中...")
+
         # 警告のあるチャンクを収集
         invalid_chunks = []
         for i, chunk in enumerate(chunks):
+            # プログレスバーの更新
+            progress = (i + 1) / len(chunks)
+            progress_bar.progress(progress)
+            status_text.text(f"チャンク {i+1}/{len(chunks)} を検証中...")
+
             is_valid, error_message = validate(chunk, call_model)
             if not is_valid:
                 invalid_chunks.append((i, chunk, error_message))
+
+        # プログレスバーを完了状態に
+        progress_bar.progress(1.0)
+        status_text.text("検証完了")
 
         # 警告のあるチャンクを表示
         if invalid_chunks:
