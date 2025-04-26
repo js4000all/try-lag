@@ -178,7 +178,7 @@ with tab1:
 
 with tab2:
     st.header("データ投入")
-    uploaded_file = st.file_uploader("テキストファイルをアップロード", type=["txt"])
+    uploaded_file = st.file_uploader("テキストファイルをアップロード", type=["txt", "md"])
     
     if uploaded_file is not None:
         text = uploaded_file.read().decode("utf-8")
