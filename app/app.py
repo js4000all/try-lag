@@ -182,7 +182,7 @@ with tab2:
     
     if uploaded_file is not None:
         text = uploaded_file.read().decode("utf-8")
-        st.text_area("アップロードされたテキスト", text, height=200, disabled=True)
+        st.success(f"ファイル「{uploaded_file.name}」をアップロードしました")
 
         call_model = _get_call_model_function()
         # チャンク分割
@@ -192,12 +192,22 @@ with tab2:
         )
         chunks = splitter.split_text(text)
         st.write(f"チャンク数: {len(chunks)}")
+
+        # 警告のあるチャンクを収集
+        invalid_chunks = []
         for i, chunk in enumerate(chunks):
-            st.text_area(f"チャンク {i}", chunk, height=100, disabled=True)
             is_valid, error_message = validate(chunk, call_model)
             if not is_valid:
-                st.error(f"チャンクに不適切な内容が含まれています: {error_message}")
-                st.stop()
+                invalid_chunks.append((i, chunk, error_message))
+
+        # 警告のあるチャンクを表示
+        if invalid_chunks:
+            st.warning(f"{len(invalid_chunks)}個のチャンクに不適切な内容が含まれています")
+            for i, chunk, error_message in invalid_chunks:
+                with st.expander(f"警告のあるチャンク {i}"):
+                    st.error(f"エラー: {error_message}")
+                    st.text_area("チャンク内容", chunk, height=100, disabled=True)
+            st.stop()
 
         db = Chroma(
             client=chroma_client,
