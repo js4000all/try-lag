@@ -17,13 +17,31 @@ CHROMA_PERSIST_DIR = "/tmp/chroma_db"
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
 
-chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-
 st.set_page_config(
     page_title="RAG Demo",
     page_icon="📚",
     layout="wide"
 )
+
+# チャット入力欄を固定するためのCSS
+st.markdown("""
+<style>
+    .stChatInput {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 70%;
+        z-index: 1000;
+        padding: 1rem;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    .main .block-container {
+        padding-bottom: 5rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
 
 # セッション状態の初期化
 if 'model' not in st.session_state:
@@ -34,6 +52,8 @@ if 'embedding' not in st.session_state:
     st.session_state.embedding = HuggingFaceEmbeddings(model_name="cl-nagoya/ruri-v3-130m")
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
 
 # 利用可能なモデル
 AVAILABLE_MODELS = [
@@ -93,51 +113,68 @@ def _get_call_model_function() -> ty.Optional[ty.Callable[[str], str]]:
 tab1, tab2, tab3 = st.tabs(["質問", "データ投入", "test"])
 
 with tab1:
-    st.header("質問")
-    question = st.text_area("質問を入力してください", height=100)
-    
-    if st.button("回答を生成"):
-        if question and st.session_state.model:
+    # チャットメッセージの表示
+    chat_container = st.container()
+    with chat_container:
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
+
+    # チャット入力（固定）
+    if prompt := st.chat_input("質問を入力してください", key="chat_input"):
+        # ユーザーのメッセージを表示
+        with chat_container:
+            with st.chat_message("user"):
+                st.write(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
+
+        if st.session_state.model:
             try:
                 call_model = _get_call_model_function()
                 # プロンプトの検証
-                is_valid, error_message = validate(question, call_model)
+                is_valid, error_message = validate(prompt, call_model)
                 if not is_valid:
-                    st.error(f"プロンプトが不適切です: {error_message}")
+                    with chat_container:
+                        with st.chat_message("assistant"):
+                            st.error(f"プロンプトが不適切です: {error_message}")
+                    st.session_state.messages.append({"role": "assistant", "content": f"エラー: {error_message}"})
                     st.stop()
                 
                 context_text = ""
                 if 'vector_db' in st.session_state:
-                    docs = st.session_state.vector_db.similarity_search(question, k=3)
+                    docs = st.session_state.vector_db.similarity_search(prompt, k=3)
                     context_text = "\n\n".join([doc.page_content for doc in docs])
                 else:
-                    st.warning("検索対象データがありません。データ投入を先に行ってください。")
+                    with chat_container:
+                        with st.chat_message("assistant"):
+                            st.warning("検索対象データがありません。データ投入を先に行ってください。")
+                    st.session_state.messages.append({"role": "assistant", "content": "検索対象データがありません。データ投入を先に行ってください。"})
+                    st.stop()
 
-                prompt = f"""
+                system_prompt = f"""
 以下の文書に基づいて、質問に答えてください。
 --- 文書情報 ---
 {context_text}
 --- 質問 ---
-{question}
+{prompt}
 """
 
-                response = call_model(prompt)
-
-                # 回答の検証
-                is_valid, error_message = validate(response, call_model)
-                if not is_valid:
-                    st.error(f"回答に不適切な内容が含まれています: {error_message}")
-                    st.stop()
-
-                st.write("回答:")
-                st.write(response)
+                with chat_container:
+                    with st.chat_message("assistant"):
+                        with st.spinner("考え中..."):
+                            response = call_model(system_prompt)
+                            st.write(response)
+                            st.session_state.messages.append({"role": "assistant", "content": response})
             except Exception as e:
-                st.error(f"エラーが発生しました: {str(e)}")
+                with chat_container:
+                    with st.chat_message("assistant"):
+                        st.error(f"エラーが発生しました: {str(e)}")
+                st.session_state.messages.append({"role": "assistant", "content": f"エラー: {str(e)}"})
         else:
-            if not st.session_state.model:
-                st.warning("モデルを初期化してください")
-            if not question:
-                st.warning("質問を入力してください")
+            with chat_container:
+                with st.chat_message("assistant"):
+                    st.warning("モデルを初期化してください")
+            st.session_state.messages.append({"role": "assistant", "content": "モデルを初期化してください"})
 
 with tab2:
     st.header("データ投入")
